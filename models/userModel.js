@@ -1,7 +1,7 @@
 import db from '../config/database.js';
 
 // Busca todos os usuários
-export async function buscarTodos() {
+export async function buscarTodosUsuarios() {
     const query = `
     SELECT usuario_id, nome, cpf, email, papel, dtcriacao, dtultalteracao
     FROM usuarios
@@ -12,7 +12,7 @@ export async function buscarTodos() {
 }
 
 // Busca usuário por ID
-export async function buscarPorId(id) {
+export async function buscarUsuarioPorId(id) {
     const query = `
     SELECT usuario_id, nome, cpf, email, papel, dtcriacao, dtultalteracao
     FROM usuarios
@@ -67,5 +67,12 @@ export async function deletar(id) {
     const query = 'DELETE FROM usuarios WHERE usuario_id = $1 RETURNING usuario_id;';
     const { rows } = await db.query(query, [id]);
     // Retorna o objeto deletado (ou null se não encontrou) para confirmação
+    return rows[0] || null;
+}
+
+export async function buscarPorEmailOuCpf(email, cpf) {
+    const query = 'SELECT usuario_id FROM usuarios WHERE LOWER(email) = LOWER($1) OR cpf = $2;';
+    const { rows } = await db.query(query, [email.toLowerCase(), cpf]);
+    // Retorna o primeiro registro encontrado ou null se não houver duplicatas.
     return rows[0] || null;
 }
