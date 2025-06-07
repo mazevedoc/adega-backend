@@ -1,31 +1,29 @@
-export function validarCadastro({ nome, email, cpf, senha, papel }) {
-  // Verificação de campos obrigatórios
-  if (!nome?.trim() || !email?.trim() || !cpf?.trim() || !senha?.trim() || !papel?.trim()) {
-    return "Todos os campos são obrigatórios.";
-  }
+import { body } from 'express-validator';
 
-  // Validação de e-mail
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email.toLowerCase())) {
-    return "Email inválido.";
-  }
+// Regras para a rota de registro
+export const regrasDeRegistro = [
+  body('nome')
+    .notEmpty().withMessage('O nome é obrigatório.'),
 
-  // Validação de CPF
-  const cpfLimpo = cpf.replace(/[^\d]/g, "");
-  if (cpfLimpo.length !== 11) {
-    return "CPF deve conter 11 dígitos numéricos.";
-  }
+  body('email')
+    .isEmail().withMessage('Forneça um e-mail válido.'),
 
-  // Validação de senha
-  if (senha.length < 6) {
-    return "A senha deve ter pelo menos 6 caracteres.";
-  }
+  body('cpf')
+    .notEmpty().withMessage('O CPF é obrigatório.')
+    .isLength({ min: 11 }).withMessage('CPF inválido.'),
 
-  // Validação de papel
-  const papeisPermitidos = ['admin', 'gerente', 'funcionario'];
-  if (!papeisPermitidos.includes(papel.toLowerCase())) {
-    return "Papel inválido. Deve ser: admin, gerente ou funcionario.";
-  }
+  body('senha')
+    .isLength({ min: 8 }).withMessage('A senha deve ter no mínimo 8 caracteres.'),
 
-  return null;
-}
+  body('papel')
+    .isIn(['admin', 'gerente', 'funcionario']).withMessage('O papel do usuário é inválido.')
+];
+
+// Regras para a rota de login
+export const regrasDeLogin = [
+  body('email')
+    .isEmail().withMessage('Forneça um e-mail válido.'),
+
+  body('senha')
+    .notEmpty().withMessage('A senha é obrigatória.')
+];

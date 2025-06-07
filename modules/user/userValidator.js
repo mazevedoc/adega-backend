@@ -28,14 +28,14 @@ export const validarAtualizacaoUsuario = [
         .isLength({ min: 4 }).withMessage('O nome deve ter pelo menos 4 caracteres.'),
 
     body('cpf').notEmpty().withMessage('O CPF é obrigatório.')
-        .isLength({ min: 11 }).withMessage('CPF inválido.'),,    
+        .isLength({ min: 11 }).withMessage('CPF inválido.'),
 
     body('email').notEmpty().withMessage('O e-mail é obrigatório.')
         .isEmail().withMessage('Formato de e-mail inválido.'),
 
     body('senha')
         .optional()
-        .isLength({ min: 6 }).withMessage('A senha deve ter no mínimo 6 caracteres.'),
+        .isLength({ min: 8 }).withMessage('A senha deve ter no mínimo 8 caracteres.'),
 
     body('papel')
         .notEmpty().withMessage('O papel é obrigatório.')

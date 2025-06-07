@@ -6,19 +6,10 @@ import {
 } from './userController.js';
 
 import { autenticarToken, autorizarPorPapel } from '../../middlewares/authMiddleware.js';
+import { validarErros } from '../../middlewares/validationMiddleware.js';
 import { validarAtualizacaoUsuario } from './userValidator.js';
-import { validationResult } from 'express-validator';
 
 const router = express.Router();
-
-// Middleware para capturar erros do express-validator
-function tratarErrosValidacao(req, res, next) {
-  const erros = validationResult(req);
-  if (!erros.isEmpty()) {
-    return res.status(400).json({ erros: erros.array() });
-  }
-  next();
-}
 
 // GET /usuarios - Listar todos
 router.get(
@@ -40,9 +31,9 @@ router.get(
 router.put(
   '/:id',
   autenticarToken,
-  autorizarPorPapel('admin', 'gerente'),
+  autorizarPorPapel('admin'),
   validarAtualizacaoUsuario,
-  tratarErrosValidacao,
+  validarErros,
   atualizarUsuario
 );
 

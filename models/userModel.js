@@ -42,11 +42,13 @@ export async function atualizar(id, { nome, cpf, email, papel }) {
 
 // Busca usuário pelo email (case-insensitive)
 export async function buscarPorEmail(email) {
-    const resultado = await db.query(
-        'SELECT * FROM usuarios WHERE LOWER(email) = LOWER($1)',
-        [email.toLowerCase()]
-    );
-    return resultado.rows[0];
+    const query = `
+        SELECT usuario_id, nome, cpf, email, papel, senha, dtcriacao, dtultalteracao
+        FROM usuarios 
+        WHERE LOWER(email) = LOWER($1)
+    `;
+    const resultado = await db.query(query, [email.toLowerCase()]);
+    return resultado.rows[0] || null;
 }
 
 // Cria novo usuário
@@ -58,4 +60,12 @@ export async function criar({ nome, email, cpf, senha, papel }) {
         [nome, email.toLowerCase(), cpf, senha, papel]
     );
     return resultado.rows[0];
+}
+
+// Deleta um usuário pelo ID
+export async function deletar(id) {
+    const query = 'DELETE FROM usuarios WHERE usuario_id = $1 RETURNING usuario_id;';
+    const { rows } = await db.query(query, [id]);
+    // Retorna o objeto deletado (ou null se não encontrou) para confirmação
+    return rows[0] || null;
 }

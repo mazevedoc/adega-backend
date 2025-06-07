@@ -1,32 +1,48 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import pool from '../../config/database.js';
-import * as Usuario from '../../models/userModel.js';
+import * as UsuarioDAO from '../../models/userModel.js';
+import ErroAplicacao from '../../utils/appError.js';
 
-export async function verificarUsuarioExistente(email, cpf) {
-    const resultado = await pool.query(
-        'SELECT * FROM usuarios WHERE LOWER(email) = LOWER($1) OR cpf = $2',
-        [email.toLowerCase(), cpf]
-    );
-    return resultado.rows.length > 0;
-}
+/**
+ * Orquestra o cadastro completo de um novo usuário.
+ * @param {object} dadosDoUsuario - Contém nome, email, cpf, senha, papel.
+ */
+export async function cadastrar(dadosDoUsuario) {
+    const { email, cpf, senha } = dadosDoUsuario;
 
-export async function cadastrarUsuario({ nome, email, cpf, senha, papel }) {
+    const usuarioExistente = await UsuarioDAO.buscarPorEmailOuCpf(email, cpf);
+    if (usuarioExistente) {
+
+        throw new ErroAplicacao('O e-mail ou CPF informado já está cadastrado.', 409);
+    }
+
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    return await Usuario.criar({ nome, email, cpf, senha: senhaCriptografada, papel });
+
+    const novoUsuario = await UsuarioDAO.criar({
+        ...dadosDoUsuario,
+        senha: senhaCriptografada
+    });
+
+    return novoUsuario;
 }
 
-export async function loginUsuario({ email, senha }) {
-    const usuario = await Usuario.buscarPorEmail(email);
-    if (!usuario) throw new Error('Credenciais inválidas.');
+/**
+ * Autentica um usuário e retorna um token JWT.
+ * @param {object} credenciais - Contém email e senha.
+ */
+export async function login(credenciais) {
+    const { email, senha } = credenciais;
 
-    const senhaConfere = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaConfere) throw new Error('Credenciais inválidas.');
+    const usuario = await UsuarioDAO.buscarPorEmail(email);
+
+    if (!usuario || !(await bcrypt.compare(senha, usuario.senha))) {
+        throw new ErroAplicacao('E-mail ou senha inválidos.', 401);
+    }
 
     const token = jwt.sign(
-        { usuario_id: usuario.usuario_id, papel: usuario.papel },
+        { id: usuario.usuario_id, papel: usuario.papel },
         process.env.JWT_SECRET,
-        { expiresIn: '1d' }
+        { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
     );
 
     return token;

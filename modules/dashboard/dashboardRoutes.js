@@ -1,13 +1,13 @@
 import express from 'express';
-import { autenticarToken, autorizarPorPapel } from '../../middlewares/authMiddleware.js';
+import { autenticarToken } from '../../middlewares/authMiddleware.js';
+import { obterResumo, obterVendasPorMes, obterProdutosResumo, obterUltimasVendas } from './dashboardController.js';
 
 const router = express.Router();
 
-router.get('/admin/painel', autenticarToken, autorizarPorPapel('admin', 'gerente'), (req, res) => {
-    res.json({
-        mensagem: 'Bem-vindo ao painel administrativo!',
-        usuario: req.usuario
-    });
-});
+// Dashboard
+router.get('/resumo', autenticarToken, obterResumo);
+router.get('/vendas-mes', autenticarToken, obterVendasPorMes);
+router.get('/ultimas-vendas', autenticarToken, obterUltimasVendas);
+router.get('/produtos', autenticarToken, obterProdutosResumo);
 
 export default router;
