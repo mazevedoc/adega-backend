@@ -24,18 +24,20 @@ export const validarCadastroUsuario = [
 
 export const validarAtualizacaoUsuario = [
     body('nome')
-        .optional()
-        .isLength({ min: 2 }).withMessage('O nome deve ter pelo menos 2 caracteres.'),
+        .notEmpty().withMessage('O nome é obrigatório.')
+        .isLength({ min: 4 }).withMessage('O nome deve ter pelo menos 4 caracteres.'),
 
-    body('email')
-        .optional()
-        .isEmail().withMessage('E-mail inválido.'),
+    body('cpf').notEmpty().withMessage('O CPF é obrigatório.')
+        .isLength({ min: 11 }).withMessage('CPF inválido.'),,    
+
+    body('email').notEmpty().withMessage('O e-mail é obrigatório.')
+        .isEmail().withMessage('Formato de e-mail inválido.'),
 
     body('senha')
         .optional()
         .isLength({ min: 6 }).withMessage('A senha deve ter no mínimo 6 caracteres.'),
 
     body('papel')
-        .optional()
+        .notEmpty().withMessage('O papel é obrigatório.')
         .isIn(['admin', 'gerente', 'funcionario']).withMessage('Papel inválido. Use admin, gerente ou funcionario.')
 ];

@@ -1,15 +1,15 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+import pg from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const { Pool } = pg;
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
-        rejectUnauthorized: false // importante para o Neon!
+        rejectUnauthorized: false // necessário para o Neon
     }
 });
 
-pool.connect()
-    .then(() => console.log('🟢 Conectado ao PostgreSQL com sucesso!'))
-    .catch((err) => console.error('🔴 Erro ao conectar ao PostgreSQL:', err));
-
-module.exports = pool;
+export default pool;

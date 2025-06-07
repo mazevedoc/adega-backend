@@ -1,13 +1,12 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
 export function autenticarToken(req, res, next) {
     const authHeader = req.headers['authorization'];
-
     if (!authHeader) {
         return res.status(401).json({ erro: 'Token de autenticação não fornecido.' });
     }
 
-    const token = authHeader.split(' ')[1]; // Bearer <token>
+    const token = authHeader.split(' ')[1];
 
     if (!token) {
         return res.status(401).json({ erro: 'Token não encontrado.' });
@@ -18,7 +17,7 @@ export function autenticarToken(req, res, next) {
             return res.status(403).json({ erro: 'Token inválido ou expirado.' });
         }
 
-        req.usuario = usuario; // { usuario_id, papel, iat, exp }
+        req.usuario = usuario;
         next();
     });
 }

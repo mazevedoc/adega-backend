@@ -1,22 +1,22 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const pool = require('../config/database');
-const Usuario = require('../models/userModel');
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import pool from '../../config/database.js';
+import * as Usuario from '../../models/userModel.js';
 
-exports.verificarUsuarioExistente = async (email, cpf) => {
+export async function verificarUsuarioExistente(email, cpf) {
     const resultado = await pool.query(
         'SELECT * FROM usuarios WHERE LOWER(email) = LOWER($1) OR cpf = $2',
         [email.toLowerCase(), cpf]
     );
     return resultado.rows.length > 0;
-};
+}
 
-exports.cadastrarUsuario = async ({ nome, email, cpf, senha, papel }) => {
+export async function cadastrarUsuario({ nome, email, cpf, senha, papel }) {
     const senhaCriptografada = await bcrypt.hash(senha, 10);
     return await Usuario.criar({ nome, email, cpf, senha: senhaCriptografada, papel });
-};
+}
 
-exports.loginUsuario = async ({ email, senha }) => {
+export async function loginUsuario({ email, senha }) {
     const usuario = await Usuario.buscarPorEmail(email);
     if (!usuario) throw new Error('Credenciais inválidas.');
 
@@ -30,4 +30,4 @@ exports.loginUsuario = async ({ email, senha }) => {
     );
 
     return token;
-};
+}

@@ -1,12 +1,13 @@
-const express = require('express');
+import express from 'express';
+import cors from 'cors';
+import rotas from './routes/index.js';
+
 const app = express();
-const authRoutes = require('./routes/authRoutes');
-const errorMiddleware = require('./middlewares/errorMiddleware');
 
-require('dotenv').config();
-
+app.use(cors());
 app.use(express.json());
-app.use('/auth', authRoutes);
-//app.use(errorMiddleware);
 
-module.exports = app;
+// Central de rotas
+app.use('/api', rotas);
+
+export default app;

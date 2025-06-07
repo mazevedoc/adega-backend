@@ -1,7 +1,7 @@
-const { validarCadastro } = require('../validators/authValidator');
-const authService = require('../services/authService');
+import { validarCadastro } from './authValidator.js';
+import * as authService from './authService.js';
 
-async function registrarUsuario(req, res) {
+export async function registrarUsuario(req, res) {
     const { nome, email, cpf, senha, papel } = req.body;
 
     const erroValidacao = validarCadastro({ nome, email, cpf, senha, papel });
@@ -23,7 +23,7 @@ async function registrarUsuario(req, res) {
     }
 }
 
-async function login(req, res, next) {
+export async function login(req, res, next) {
     try {
         const token = await authService.loginUsuario(req.body);
         res.status(200).json({ token });
@@ -31,5 +31,3 @@ async function login(req, res, next) {
         next(erro);
     }
 }
-
-module.exports = { registrarUsuario, login };
