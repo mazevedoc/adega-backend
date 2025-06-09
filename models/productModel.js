@@ -53,6 +53,25 @@ export const buscarPorSku = async (sku) => {
     return rows[0];
 };
 
+/**
+ * Busca vários produtos de uma vez a partir de uma lista de IDs.
+ */
+export async function buscarVariosPorId(ids) {
+    // A sintaxe '= ANY($1)' permite buscar por múltiplos valores em um array
+    const query = 'SELECT * FROM produtos WHERE produto_id = ANY($1::int[]);';
+    const { rows } = await db.query(query, [ids]);
+    return rows;
+}
+
+/**
+ * Busca a informação de estoque de um produto específico.
+ */
+export async function buscarEstoquePorProdutoId(produtoId) {
+    const query = 'SELECT * FROM estoque WHERE produto_id = $1;';
+    const { rows } = await db.query(query, [produtoId]);
+    return rows[0] || null;
+}
+
 export const inserirProduto = async (produto) => {
     const {
         nome, descricao, categoria_id, fornecedor_id, teor_alcoolico, volume_ml,

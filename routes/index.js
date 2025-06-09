@@ -4,6 +4,7 @@ import authRoutes from '../modules/auth/authRoutes.js';
 import userRoutes from '../modules/user/userRoutes.js';
 import dashboardRoutes from '../modules/dashboard/dashboardRoutes.js';
 import productRoutes from '../modules/products/productRoutes.js';
+import saleRoutes from '../modules/sales/saleRoutes.js';
 // importe mais conforme crescer
 
 const router = express.Router();
@@ -13,5 +14,6 @@ router.use('/auth', authRoutes);
 router.use('/usuarios', userRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/produtos', productRoutes);
+router.use('/sales', saleRoutes);
 
 export default router;
