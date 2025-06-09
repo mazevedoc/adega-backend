@@ -19,7 +19,6 @@ export const buscarProdutosComFiltros = async (filtros) => {
     return produtosBrutos.map(produto => new ProductEntity(produto));
 };
 
-
 export const criarNovoProduto = async (dadosDoProduto) => {
     const { sku, categoria_id, fornecedor_id } = dadosDoProduto;
 

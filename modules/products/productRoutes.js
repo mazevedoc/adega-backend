@@ -4,8 +4,7 @@ import {
     getProdutoPorId,
     postNovoProduto,
     putProduto,
-    deleteProduto,
-    buscarProdutos
+    deleteProduto
 } from './productController.js';
 
 import { autenticarToken, autorizarPorPapel } from '../../middlewares/authMiddleware.js';
@@ -16,7 +15,6 @@ const papeisAutorizados = ['admin', 'gerente'];
 
 router.get('/', getTodosProdutos);
 router.get('/:id', getProdutoPorId);
-router.get('/', productController.buscarProdutos);
 
 router.post(
     '/',

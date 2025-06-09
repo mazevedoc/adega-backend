@@ -10,7 +10,7 @@ export const buscarProdutoPorId = async (id) => {
     return rows[0];
 };
 
-export const buscarProdutosComFiltros = async ({ nome, categoria_id, fornecedor_id }) => {
+export const buscarProdutosComFiltros = async ({ nome, categoria_id, fornecedor_id, pagina = 1, limite = 10, ordenarPor = 'produto_id', ordem = 'ASC' }) => {
     let query = 'SELECT * FROM produtos WHERE 1=1';
     const params = [];
 
@@ -28,6 +28,21 @@ export const buscarProdutosComFiltros = async ({ nome, categoria_id, fornecedor_
         query += ' AND fornecedor_id = $' + (params.length + 1);
         params.push(fornecedor_id);
     }
+
+    // Validação básica para evitar injeção no ORDER BY
+    const colunasPermitidas = ['produto_id', 'nome', 'preco', 'volume_ml', 'ativo'];
+    const direcoesPermitidas = ['ASC', 'DESC'];
+
+    if (!colunasPermitidas.includes(ordenarPor)) ordenarPor = 'produto_id';
+    if (!direcoesPermitidas.includes(ordem.toUpperCase())) ordem = 'ASC';
+
+    // Ordenação
+    query += ` ORDER BY ${ordenarPor} ${ordem.toUpperCase()}`;
+
+    // Paginação
+    const offset = (pagina - 1) * limite;
+    query += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limite, offset);
 
     const resultado = await db.query(query, params);
     return resultado.rows;

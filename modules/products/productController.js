@@ -7,26 +7,11 @@ import {
     buscarProdutosComFiltros
 } from './productService.js';
 
-export const getTodosProdutos = async (req, res, next) => {
-    try {
-        const produtos = await obterListaProdutos();
-        res.status(200).json(produtos);
-    } catch (err) {
-        next(err);
-    }
-};
+import { catchAsync } from '../../utils/catchAsync.js';
+import ErroAplicacao from '../../utils/appError.js';
 
-export const getProdutoPorId = async (req, res, next) => {
-    try {
-        const produto = await buscarProdutoPorId(req.params.id);
-        if (!produto) return res.status(404).json({ erro: 'Produto não encontrado.' });
-        res.status(200).json(produto);
-    } catch (err) {
-        next(err);
-    }
-};
-
-export const buscarProdutos = catchAsync(async (req, res) => {
+// GET /api/produtos - com ou sem filtros
+export const getTodosProdutos = catchAsync(async (req, res) => {
     const { nome, categoria_id, fornecedor_id } = req.query;
 
     const filtros = {
@@ -35,48 +20,59 @@ export const buscarProdutos = catchAsync(async (req, res) => {
         fornecedor_id: fornecedor_id ? Number(fornecedor_id) : null
     };
 
-    const produtos = await productService.buscarProdutosComFiltros(filtros);
-    res.status(200).json(produtos);
+    const temFiltro = filtros.nome || filtros.categoria_id || filtros.fornecedor_id;
+
+    const produtos = temFiltro
+        ? await buscarProdutosComFiltros(filtros)
+        : await obterListaProdutos();
+
+    res.status(200).json({
+        status: 'sucesso',
+        resultados: produtos.length,
+        dados: produtos
+    });
 });
 
+// GET /api/produtos/:id
+export const getProdutoPorId = catchAsync(async (req, res) => {
+    const produto = await buscarProdutoPorId(req.params.id);
+    if (!produto) throw new ErroAplicacao('Produto não encontrado.', 404);
 
-export const postNovoProduto = async (req, res, next) => {
-    try {
-        const novoProduto = await criarNovoProduto(req.body);
-        res.status(201).json(novoProduto);
-    } catch (err) {
-        next(err);
-    }
-};
+    res.status(200).json({
+        status: 'sucesso',
+        dados: produto
+    });
+});
 
-export const putProduto = async (req, res, next) => {
-    try {
-        const produtoAtualizado = await atualizarProduto(req.params.id, req.body);
-        if (!produtoAtualizado) return res.status(404).json({ erro: 'Produto não encontrado.' });
-        res.status(200).json(produtoAtualizado);
-    } catch (err) {
-        next(err);
-    }
-};
+// POST /api/produtos
+export const postNovoProduto = catchAsync(async (req, res) => {
+    const novoProduto = await criarNovoProduto(req.body);
 
-export const deleteProduto = async (req, res, next) => {
-    try {
-        // A função do serviço agora retorna o produto deletado ou null.
-        const produtoDeletado = await deletarProduto(req.params.id);
+    res.status(201).json({
+        status: 'sucesso',
+        dados: novoProduto
+    });
+});
 
-        // A verificação de "não encontrado" continua igual.
-        if (!produtoDeletado) {
-            throw new ErroAplicacao('Produto não encontrado.', 404);
-        }
+// PUT /api/produtos/:id
+export const putProduto = catchAsync(async (req, res) => {
+    const produtoAtualizado = await atualizarProduto(req.params.id, req.body);
+    if (!produtoAtualizado) throw new ErroAplicacao('Produto não encontrado.', 404);
 
-        // MUDANÇA: Em vez de 204, enviamos 200 com um corpo JSON de sucesso.
-        res.status(200).json({
-            status: 'sucesso',
-            mensagem: 'Produto deletado com sucesso.',
-            produto: produtoDeletado
-        });
+    res.status(200).json({
+        status: 'sucesso',
+        dados: produtoAtualizado
+    });
+});
 
-    } catch (err) {
-        next(err);
-    }
-};
+// DELETE /api/produtos/:id
+export const deleteProduto = catchAsync(async (req, res) => {
+    const produtoDeletado = await deletarProduto(req.params.id);
+    if (!produtoDeletado) throw new ErroAplicacao('Produto não encontrado.', 404);
+
+    res.status(200).json({
+        status: 'sucesso',
+        mensagem: 'Produto deletado com sucesso.',
+        dados: produtoDeletado
+    });
+});
