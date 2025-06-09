@@ -1,69 +1,97 @@
 import * as productModel from '../../models/productModel.js';
+import * as categoryModel from '../../models/categoryModel.js';
+import * as supplierModel from '../../models/supplierModel.js';
 import { ProductEntity } from './productEntity.js';
 import ErroAplicacao from '../../utils/appError.js';
 
-/**
- * Busca a lista de todos os produtos e a converte em entidades.
- */
 export const obterListaProdutos = async () => {
     const produtosBrutos = await productModel.buscarTodosProdutos();
-    // A responsabilidade de mapear para a entidade agora é do serviço.
     return produtosBrutos.map(produto => new ProductEntity(produto));
 };
 
-/**
- * Busca um produto específico pelo ID.
- */
 export const buscarProdutoPorId = async (id) => {
     const produtoBruto = await productModel.buscarProdutoPorId(id);
-    // Se não encontrar, retorna nulo (o controller tratará o 404).
     return produtoBruto ? new ProductEntity(produtoBruto) : null;
 };
 
-/**
- * Contém a LÓGICA DE NEGÓCIO para criar um novo produto.
- */
-export const criarNovoProduto = async (dadosDoProduto) => {
-    const { sku } = dadosDoProduto;
+export const buscarProdutosComFiltros = async (filtros) => {
+    const produtosBrutos = await productModel.buscarProdutosComFiltros(filtros);
+    return produtosBrutos.map(produto => new ProductEntity(produto));
+};
 
-    // ===== INÍCIO DA LÓGICA DE NEGÓCIO =====
-    // 1. Verificar se o SKU do produto já existe no banco.
+
+export const criarNovoProduto = async (dadosDoProduto) => {
+    const { sku, categoria_id, fornecedor_id } = dadosDoProduto;
+
+    const [categoriaExiste, fornecedorExiste] = await Promise.all([
+        categoryModel.buscarPorId(categoria_id),
+        supplierModel.buscarPorId(fornecedor_id)
+    ]);
+
+    if (!categoriaExiste) {
+        throw new ErroAplicacao('A categoria especificada não existe.', 400);
+    }
+    if (!fornecedorExiste) {
+        throw new ErroAplicacao('O fornecedor especificado não existe.', 400);
+    }
+
     if (sku) {
         const produtoExistente = await productModel.buscarPorSku(sku);
         if (produtoExistente) {
-            throw new ErroAplicacao('Já existe um produto cadastrado com este SKU.', 409); // 409 Conflict
+            throw new ErroAplicacao('Já existe um produto cadastrado com este SKU.', 409);
         }
     }
-    // (Aqui vai entrar outras regras: verificar se categoria_id é válido, etc.)
-    // ===== FIM DA LÓGICA DE NEGÓCIO =====
 
-    // Se todas as regras de negócio passarem, cria o produto.
     const novoProdutoBruto = await productModel.inserirProduto(dadosDoProduto);
     return new ProductEntity(novoProdutoBruto);
 };
 
-/**
- * Contém a LÓGICA DE NEGÓCIO para atualizar um produto.
- */
 export const atualizarProduto = async (id, dadosDoProduto) => {
-
-    //Verificar se o produto que se quer atualizar realmente existe.
-    const produtoParaAtualizar = await productModel.buscarProdutoPorId(id);
-    if (!produtoParaAtualizar) {
+    const produtoAtual = await productModel.buscarProdutoPorId(id);
+    if (!produtoAtual) {
         return null;
     }
 
-    // (Aqui entrar outras regras, como verificar se o novo SKU não conflita com outro produto)
+    const { sku, categoria_id, fornecedor_id } = dadosDoProduto;
+
+    // Validação de SKU: verificar se está sendo alterado e se já existe em outro produto
+    if (sku && sku !== produtoAtual.sku) {
+        const produtoComMesmoSku = await productModel.buscarPorSku(sku);
+        if (produtoComMesmoSku && produtoComMesmoSku.produto_id !== id) {
+            throw new ErroAplicacao('Já existe outro produto com este SKU.', 409);
+        }
+    }
+
+    // Validar categoria (se enviada)
+    if (categoria_id) {
+        const categoriaExiste = await categoryModel.buscarPorId(categoria_id);
+        if (!categoriaExiste) {
+            throw new ErroAplicacao('A categoria especificada não existe.', 400);
+        }
+    }
+
+    // Validar fornecedor (se enviado)
+    if (fornecedor_id) {
+        const fornecedorExiste = await supplierModel.buscarPorId(fornecedor_id);
+        if (!fornecedorExiste) {
+            throw new ErroAplicacao('O fornecedor especificado não existe.', 400);
+        }
+    }
 
     const produtoAtualizadoBruto = await productModel.atualizarProdutoPorId(id, dadosDoProduto);
     return new ProductEntity(produtoAtualizadoBruto);
 };
 
-/**
- * Deleta um produto.
- */
 export const deletarProduto = async (id) => {
-    // colocar lógicas aqui, como "não deletar se o produto tiver estoque".
-    // Por enquanto, apenas repassamos a chamada.
+    const produto = await productModel.buscarProdutoPorId(id);
+    if (!produto) {
+        return null;
+    }
+
+    // Regra: não permitir deletar produto com estoque > 0
+    if (produto.estoque > 0) {
+        throw new ErroAplicacao('Não é possível excluir um produto com estoque disponível.', 400);
+    }
+
     return await productModel.deletarProdutoPorId(id);
 };

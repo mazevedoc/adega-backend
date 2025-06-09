@@ -3,7 +3,7 @@ import express from 'express';
 import authRoutes from '../modules/auth/authRoutes.js';
 import userRoutes from '../modules/user/userRoutes.js';
 import dashboardRoutes from '../modules/dashboard/dashboardRoutes.js';
-import productRoutes from './modules/products/productRoutes.js';
+import productRoutes from '../modules/products/productRoutes.js';
 // importe mais conforme crescer
 
 const router = express.Router();

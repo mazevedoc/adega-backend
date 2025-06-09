@@ -10,6 +10,29 @@ export const buscarProdutoPorId = async (id) => {
     return rows[0];
 };
 
+export const buscarProdutosComFiltros = async ({ nome, categoria_id, fornecedor_id }) => {
+    let query = 'SELECT * FROM produtos WHERE 1=1';
+    const params = [];
+
+    if (nome) {
+        query += ' AND nome ILIKE $' + (params.length + 1);
+        params.push(`%${nome}%`);
+    }
+
+    if (categoria_id) {
+        query += ' AND categoria_id = $' + (params.length + 1);
+        params.push(categoria_id);
+    }
+
+    if (fornecedor_id) {
+        query += ' AND fornecedor_id = $' + (params.length + 1);
+        params.push(fornecedor_id);
+    }
+
+    const resultado = await db.query(query, params);
+    return resultado.rows;
+};
+
 export const buscarPorSku = async (sku) => {
     const { rows } = await db.query('SELECT produto_id FROM produtos WHERE sku = $1', [sku]);
     return rows[0];
@@ -60,7 +83,10 @@ export const atualizarProdutoPorId = async (id, produto) => {
     return rows[0];
 };
 
-export const deletarProdutoPorId = async (id) => {
-    const { rowCount } = await db.query('DELETE FROM produtos WHERE produto_id = $1', [id]);
-    return rowCount > 0;
-};
+export async function deletarProdutoPorId(id) {
+
+    const query = 'DELETE FROM produtos WHERE produto_id = $1 RETURNING produto_id, nome;';
+    const { rows } = await db.query(query, [id]);
+
+    return rows[0] || null;
+}

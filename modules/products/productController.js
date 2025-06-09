@@ -3,7 +3,8 @@ import {
     buscarProdutoPorId,
     criarNovoProduto,
     atualizarProduto,
-    deletarProduto
+    deletarProduto,
+    buscarProdutosComFiltros
 } from './productService.js';
 
 export const getTodosProdutos = async (req, res, next) => {
@@ -24,6 +25,20 @@ export const getProdutoPorId = async (req, res, next) => {
         next(err);
     }
 };
+
+export const buscarProdutos = catchAsync(async (req, res) => {
+    const { nome, categoria_id, fornecedor_id } = req.query;
+
+    const filtros = {
+        nome: nome || null,
+        categoria_id: categoria_id ? Number(categoria_id) : null,
+        fornecedor_id: fornecedor_id ? Number(fornecedor_id) : null
+    };
+
+    const produtos = await productService.buscarProdutosComFiltros(filtros);
+    res.status(200).json(produtos);
+});
+
 
 export const postNovoProduto = async (req, res, next) => {
     try {
@@ -46,9 +61,21 @@ export const putProduto = async (req, res, next) => {
 
 export const deleteProduto = async (req, res, next) => {
     try {
-        const removido = await deletarProduto(req.params.id);
-        if (!removido) return res.status(404).json({ erro: 'Produto não encontrado.' });
-        res.status(204).send();
+        // A função do serviço agora retorna o produto deletado ou null.
+        const produtoDeletado = await deletarProduto(req.params.id);
+
+        // A verificação de "não encontrado" continua igual.
+        if (!produtoDeletado) {
+            throw new ErroAplicacao('Produto não encontrado.', 404);
+        }
+
+        // MUDANÇA: Em vez de 204, enviamos 200 com um corpo JSON de sucesso.
+        res.status(200).json({
+            status: 'sucesso',
+            mensagem: 'Produto deletado com sucesso.',
+            produto: produtoDeletado
+        });
+
     } catch (err) {
         next(err);
     }
