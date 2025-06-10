@@ -1,20 +1,15 @@
 import * as saleService from './saleService.js';
+import { catchAsync } from '../../utils/catchAsync.js';
 
-export async function registrarNovaVenda(req, res, next) {
-    try {
-        // req.user é populado pelo middleware 'autenticarToken'
-        const usuarioLogado = req.user;
+export const registrarNovaVenda = catchAsync(async (req, res, next) => {
 
-        // Passamos o corpo da requisição e os dados do usuário logado para o serviço
-        const novaVenda = await saleService.registrarVenda(req.body, usuarioLogado);
+    const usuarioLogado = req.user;
 
-        res.status(201).json({
-            status: 'sucesso',
-            mensagem: 'Venda registrada com sucesso!',
-            venda: novaVenda
-        });
+    const novaVenda = await saleService.registrarVenda(req.body, usuarioLogado);
 
-    } catch (erro) {
-        next(erro);
-    }
-}
+    res.status(201).json({
+        status: 'sucesso',
+        mensagem: 'Venda registrada com sucesso!',
+        venda: novaVenda
+    });
+});

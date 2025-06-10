@@ -1,40 +1,31 @@
 import ErroAplicacao from '../utils/appError.js';
+import { registrarErro } from '../utils/logger.js';
 
-// Trata erros de chave única (duplicada)
 const tratarErroDeChaveUnicaDB = (erro) => {
-  const campo = Object.keys(erro.fields)[0];
-  const valor = Object.values(erro.fields)[0];
-  const mensagem = `O campo '${campo}' com o valor '${valor}' já existe. Por favor, utilize outro valor.`;
-  return new ErroAplicacao(mensagem, 409); // 409: Conflito
+  const campo = erro.detail.match(/\((.*?)\)/)?.[1] || 'desconhecido';
+  const valor = erro.detail.match(/\)=\((.*?)\)/)?.[1] || 'desconhecido';
+  const mensagem = `O valor '${valor}' para o campo '${campo}' já está em uso.`;
+  return new ErroAplicacao(mensagem, 409);
 };
 
-const tratarErroDeValidacaoDB = (erro) => {
-  const listaDeErros = Object.values(erro.errors).map(el => el.message);
-  const mensagem = `Dados de entrada inválidos. ${listaDeErros.join('. ')}`;
-  return new ErroAplicacao(mensagem, 400); // 400: Requisição Inválida
+const tratarErroDeChaveEstrangeiraDB = (erro) => {
+  const mensagem = `A referência que você está tentando usar não existe. Verifique os IDs fornecidos.`;
+  return new ErroAplicacao(mensagem, 400);
 };
 
-// Trata erros de token JWT inválido.
-const tratarErroJWT = () =>
-  new ErroAplicacao('Token inválido. Por favor, faça login novamente.', 401); // 401: Não Autorizado
+const tratarErroJWT = () => new ErroAplicacao('Token inválido. Por favor, faça login novamente.', 401);
+const tratarErroTokenExpiradoJWT = () => new ErroAplicacao('Seu token expirou. Por favor, faça login novamente.', 401);
 
-// Trata erros de token JWT expirado.
-const tratarErroTokenExpiradoJWT = () =>
-  new ErroAplicacao('Seu token expirou. Por favor, faça login novamente.', 401); // 401: Não Autorizado
-
-// Função para enviar erros detalhados no ambiente de desenvolvimento.
 const enviarErroDev = (erro, resposta) => {
   resposta.status(erro.codigoStatus).json({
     status: erro.status,
-    erro: erro,
     mensagem: erro.message,
+    erro: erro,
     stack: erro.stack,
   });
 };
 
-// Função para enviar erros amigáveis no ambiente de produção.
-const enviarErroProd = (erro, resposta) => {
-  // Se o erro for operacional (previsto), envia a mensagem para o cliente.
+const enviarErroProd = (erro, req, resposta) => {
   if (erro.eOperacional) {
     return resposta.status(erro.codigoStatus).json({
       status: erro.status,
@@ -42,19 +33,15 @@ const enviarErroProd = (erro, resposta) => {
     });
   }
 
-  // Se for um erro de programação ou desconhecido, não vaza detalhes.
-  // 1. Loga o erro no console para o desenvolvedor.
-  console.error('ERRO  CRÍTICO 💥:', erro);
-  // 2. Envia uma mensagem genérica.
+  const logMessage = `${erro.codigoStatus || 500} - ${erro.message} - ${req.originalUrl} - ${req.method} - ${req.ip}\nStack: ${erro.stack}`;
+  registrarErro(logMessage);
+
   return resposta.status(500).json({
     status: 'erro',
     mensagem: 'Algo deu muito errado no servidor!',
   });
 };
 
-// ==========================================
-// FUNÇÃO PRINCIPAL DO MIDDLEWARE (EXPORTADA)
-// ==========================================
 const manipuladorDeErroGlobal = (erro, req, resposta, next) => {
   erro.codigoStatus = erro.codigoStatus || 500;
   erro.status = erro.status || 'erro';
@@ -62,24 +49,14 @@ const manipuladorDeErroGlobal = (erro, req, resposta, next) => {
   if (process.env.NODE_ENV === 'development') {
     enviarErroDev(erro, resposta);
   } else if (process.env.NODE_ENV === 'production') {
-    // Cria uma cópia do erro para não modificar o objeto original.
-    let erroTratado = { ...erro, name: erro.name, message: erro.message, fields: erro.fields, errors: erro.errors };
+    let erroTratado = { ...erro, message: erro.message, detail: erro.detail };
 
-    // Converte erros específicos em erros operacionais amigáveis.
-    if (erroTratado.name === 'SequelizeUniqueConstraintError') {
-      erroTratado = tratarErroDeChaveUnicaDB(erroTratado);
-    }
-    if (erroTratado.name === 'SequelizeValidationError') {
-      erroTratado = tratarErroDeValidacaoDB(erroTratado);
-    }
-    if (erroTratado.name === 'JsonWebTokenError') {
-      erroTratado = tratarErroJWT();
-    }
-    if (erroTratado.name === 'TokenExpiredError') {
-      erroTratado = tratarErroTokenExpiradoJWT();
-    }
+    if (erro.code === '23505') erroTratado = tratarErroDeChaveUnicaDB(erro);
+    if (erro.code === '23503') erroTratado = tratarErroDeChaveEstrangeiraDB(erro);
+    if (erro.name === 'JsonWebTokenError') erroTratado = tratarErroJWT();
+    if (erro.name === 'TokenExpiredError') erroTratado = tratarErroTokenExpiradoJWT();
 
-    enviarErroProd(erroTratado, resposta);
+    enviarErroProd(erroTratado, req, resposta);
   }
 };
 

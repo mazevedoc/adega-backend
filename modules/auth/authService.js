@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import * as UsuarioDAO from '../../models/userModel.js';
+import * as usuarioModel from '../../models/userModel.js';
 import ErroAplicacao from '../../utils/appError.js';
 
 /**
@@ -10,7 +10,7 @@ import ErroAplicacao from '../../utils/appError.js';
 export async function cadastrar(dadosDoUsuario) {
     const { email, cpf, senha } = dadosDoUsuario;
 
-    const usuarioExistente = await UsuarioDAO.buscarPorEmailOuCpf(email, cpf);
+    const usuarioExistente = await usuarioModel.buscarPorEmailOuCpf(email, cpf);
     if (usuarioExistente) {
 
         throw new ErroAplicacao('O e-mail ou CPF informado já está cadastrado.', 409);
@@ -18,7 +18,7 @@ export async function cadastrar(dadosDoUsuario) {
 
     const senhaCriptografada = await bcrypt.hash(senha, 10);
 
-    const novoUsuario = await UsuarioDAO.criar({
+    const novoUsuario = await usuarioModel.criar({
         ...dadosDoUsuario,
         senha: senhaCriptografada
     });
@@ -33,7 +33,7 @@ export async function cadastrar(dadosDoUsuario) {
 export async function login(credenciais) {
     const { email, senha } = credenciais;
 
-    const usuario = await UsuarioDAO.buscarPorEmail(email);
+    const usuario = await usuarioModel.buscarPorEmail(email);
 
     if (!usuario || !(await bcrypt.compare(senha, usuario.senha))) {
         throw new ErroAplicacao('E-mail ou senha inválidos.', 401);

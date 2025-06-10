@@ -1,7 +1,7 @@
 import db from '../config/database.js';
 
 // Busca todos os usuários
-export async function buscarTodosUsuarios() {
+export async function buscarTodos() {
     const query = `
     SELECT usuario_id, nome, cpf, email, papel, dtcriacao, dtultalteracao
     FROM usuarios
@@ -12,7 +12,7 @@ export async function buscarTodosUsuarios() {
 }
 
 // Busca usuário por ID
-export async function buscarUsuarioPorId(id) {
+export async function buscarPorId(id) {
     const query = `
     SELECT usuario_id, nome, cpf, email, papel, dtcriacao, dtultalteracao
     FROM usuarios

@@ -10,7 +10,8 @@ export const regrasDeRegistro = [
 
   body('cpf')
     .notEmpty().withMessage('O CPF é obrigatório.')
-    .isLength({ min: 11 }).withMessage('CPF inválido.'),
+    //expressão regular para validar o formato XXX.XXX.XXX-XX
+    .matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/).withMessage('Formato de CPF inválido. Use XXX.XXX.XXX-XX.'),
 
   body('senha')
     .isLength({ min: 8 }).withMessage('A senha deve ter no mínimo 8 caracteres.'),

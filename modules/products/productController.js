@@ -1,78 +1,46 @@
-import {
-    obterListaProdutos,
-    buscarProdutoPorId,
-    criarNovoProduto,
-    atualizarProduto,
-    deletarProduto,
-    buscarProdutosComFiltros
-} from './productService.js';
-
+import * as productService from './productService.js';
 import { catchAsync } from '../../utils/catchAsync.js';
 import ErroAplicacao from '../../utils/appError.js';
 
-// GET /api/produtos - com ou sem filtros
-export const getTodosProdutos = catchAsync(async (req, res) => {
-    const { nome, categoria_id, fornecedor_id } = req.query;
-
-    const filtros = {
-        nome: nome || null,
-        categoria_id: categoria_id ? Number(categoria_id) : null,
-        fornecedor_id: fornecedor_id ? Number(fornecedor_id) : null
-    };
-
-    const temFiltro = filtros.nome || filtros.categoria_id || filtros.fornecedor_id;
-
-    const produtos = temFiltro
-        ? await buscarProdutosComFiltros(filtros)
-        : await obterListaProdutos();
+export const getProdutos = catchAsync(async (req, res, next) => {
+    const produtos = await productService.listarProdutos(req.query);
 
     res.status(200).json({
         status: 'sucesso',
         resultados: produtos.length,
-        dados: produtos
+        dados: { produtos }
     });
 });
 
-// GET /api/produtos/:id
-export const getProdutoPorId = catchAsync(async (req, res) => {
-    const produto = await buscarProdutoPorId(req.params.id);
-    if (!produto) throw new ErroAplicacao('Produto não encontrado.', 404);
-
-    res.status(200).json({
-        status: 'sucesso',
-        dados: produto
-    });
+export const getProdutoPorId = catchAsync(async (req, res, next) => {
+    const produto = await productService.buscarProdutoPorId(req.params.id);
+    if (!produto) {
+        throw new ErroAplicacao('Produto não encontrado com este ID.', 404);
+    }
+    res.status(200).json({ status: 'sucesso', dados: { produto } });
 });
 
-// POST /api/produtos
-export const postNovoProduto = catchAsync(async (req, res) => {
-    const novoProduto = await criarNovoProduto(req.body);
-
-    res.status(201).json({
-        status: 'sucesso',
-        dados: novoProduto
-    });
+export const postNovoProduto = catchAsync(async (req, res, next) => {
+    const novoProduto = await productService.criarNovoProduto(req.body);
+    res.status(201).json({ status: 'sucesso', dados: { produto: novoProduto } });
 });
 
-// PUT /api/produtos/:id
-export const putProduto = catchAsync(async (req, res) => {
-    const produtoAtualizado = await atualizarProduto(req.params.id, req.body);
-    if (!produtoAtualizado) throw new ErroAplicacao('Produto não encontrado.', 404);
-
-    res.status(200).json({
-        status: 'sucesso',
-        dados: produtoAtualizado
-    });
+export const putProduto = catchAsync(async (req, res, next) => {
+    const produtoAtualizado = await productService.atualizarProduto(req.params.id, req.body);
+    if (!produtoAtualizado) {
+        throw new ErroAplicacao('Produto não encontrado com este ID.', 404);
+    }
+    res.status(200).json({ status: 'sucesso', dados: { produto: produtoAtualizado } });
 });
 
-// DELETE /api/produtos/:id
-export const deleteProduto = catchAsync(async (req, res) => {
-    const produtoDeletado = await deletarProduto(req.params.id);
-    if (!produtoDeletado) throw new ErroAplicacao('Produto não encontrado.', 404);
-
+export const deleteProduto = catchAsync(async (req, res, next) => {
+    const produtoDeletado = await productService.deletarProduto(req.params.id);
+    if (!produtoDeletado) {
+        throw new ErroAplicacao('Produto não encontrado com este ID.', 404);
+    }
     res.status(200).json({
         status: 'sucesso',
         mensagem: 'Produto deletado com sucesso.',
-        dados: produtoDeletado
+        dados: { produto: produtoDeletado }
     });
 });
