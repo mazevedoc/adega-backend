@@ -66,3 +66,8 @@ export async function criarVenda(dadosDaVenda) {
     client.release();
   }
 }
+
+export async function getVendasPorClienteId(clienteId) {
+    const { rows } = await db.query('SELECT venda_id FROM vendas WHERE cliente_id = $1 LIMIT 1;', [clienteId]);
+    return rows;
+}
